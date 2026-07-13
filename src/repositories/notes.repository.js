@@ -25,6 +25,9 @@ class NoteRepository {
     /* HARD DELETE */
     await Note.findByIdAndDelete(note_id);
   }
+  async deleteAllByUserId(user_id) {
+    await Note.deleteMany({ user_id: user_id });
+  }
 }
 
 const noteRepository = new NoteRepository();

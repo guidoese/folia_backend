@@ -13,17 +13,36 @@ if (ENVIRONMENT.MODE === "development") {
   dns.setServers(["8.8.8.8", "8.8.4.4"]);
 }
 
-connectMongoDB();
-
 const app = express();
 const port = ENVIRONMENT.PORT;
 
 //Habilitamos las consultas CORS de origen crusado
 
-app.use(cors());
+app.use(
+  cors({
+    origin: ENVIRONMENT.MODE === "development" ? "*" : ENVIRONMENT.URL_FRONTEND,
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  }),
+);
 
 //parse json
 app.use(express.json());
+
+//conect mongo db
+app.use(async (request, response, next) => {
+  try {
+    await connectMongoDB();
+    next();
+  } catch (error) {
+    return response.status(500).json({
+      message: "Error de conexión con la base de datos",
+      ok: false,
+      status: 500,
+    });
+  }
+});
+
 //rutas
 app.use("/api/auth", authRouter);
 
@@ -53,10 +72,14 @@ app.get(
   },
 );
 
-app.listen(port, () => {
-  console.log(`Server is running on port http://localhost:${port}`);
-});
+// Solo escuchamos en local, en Vercel exportamos la app
+if (ENVIRONMENT.MODE === "development") {
+  app.listen(port, () => {
+    console.log(`Server is running on port http://localhost:${port}`);
+  });
+}
 
+export default app;
 /* 
 
 /api/auth => Trabaja todo lo relacionado a autentificacion 

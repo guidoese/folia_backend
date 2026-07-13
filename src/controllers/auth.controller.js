@@ -2,6 +2,7 @@ import ENVIRONMENT from "../config/environment.config.js";
 import mailer_transport from "../config/mailer.config.js";
 import ServerError from "../helpers/serverError.helper.js";
 import userRepository from "../repositories/user.repository.js";
+import noteRepository from "../repositories/notes.repository.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
@@ -103,6 +104,58 @@ function buildResetPasswordEmailHtml(reset_token, url_frontend) {
           <td style="padding:24px 40px 32px;">
             <p style="margin:0 0 8px;font-family:Arial,sans-serif;font-size:12px;color:#A89E90;line-height:1.6;">Si el botón no funciona, copiá y pegá este enlace en tu navegador:</p>
             <p style="margin:0;font-family:Arial,sans-serif;font-size:12px;color:#C7853D;word-break:break-all;">${reset_url}</p>
+          </td>
+        </tr>
+      </table>
+      <p style="margin:20px 0 0;font-family:Arial,sans-serif;font-size:12px;color:#A89E90;text-align:center;">© Folia · Tu espacio de notas personales</p>
+    </td></tr>
+  </table>
+</body>
+</html>`.trim();
+}
+
+//funcion builder para hacer el mail HTML con estilo inline para notificar al usuario que se elimino la cuenta
+function buildDeleteAccountEmailHtml(nombre, url_frontend) {
+  return `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cuenta eliminada en Folia</title>
+</head>
+<body style="margin:0;padding:0;background-color:#F0EBE3;font-family:Georgia,'Times New Roman',serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 16px;">
+    <tr><td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background-color:#FAF7F2;border-radius:16px;border:1px solid #E2DDD3;overflow:hidden;">
+        <tr>
+          <td style="background-color:#2B2926;padding:32px 40px 28px;">
+            <p style="margin:0 0 4px;font-family:Arial,sans-serif;font-size:11px;font-weight:bold;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.5);">Folia</p>
+            <h1 style="margin:0;font-family:Georgia,serif;font-size:28px;font-weight:bold;color:#FFFFFF;letter-spacing:-0.5px;">Cuenta eliminada</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:36px 40px 32px;">
+            <p style="margin:0 0 10px;font-family:Arial,sans-serif;font-size:15px;line-height:1.65;color:#6B6258;">Hola <strong style="color:#2B2926;">${nombre}</strong>, te confirmamos que tu cuenta en Folia fue eliminada con éxito.</p>
+            <p style="margin:0 0 10px;font-family:Arial,sans-serif;font-size:15px;line-height:1.65;color:#6B6258;">Todos tus datos y notas fueron borrados permanentemente de nuestros servidores.</p>
+            <p style="margin:0 0 28px;font-family:Arial,sans-serif;font-size:15px;line-height:1.65;color:#6B6258;">Si esto fue un error o querés volver a usar Folia, podés crear una nueva cuenta en cualquier momento.</p>
+            <table cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="background-color:#C7853D;border-radius:8px;">
+                  <a href="${url_frontend}/register" style="display:inline-block;padding:14px 32px;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;color:#FFFFFF;text-decoration:none;border-radius:8px;letter-spacing:0.02em;">Crear nueva cuenta</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:0 40px;">
+            <div style="height:1px;background-color:#E2DDD3;"></div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:24px 40px 32px;">
+            <p style="margin:0;font-family:Arial,sans-serif;font-size:12px;color:#A89E90;line-height:1.6;">Si no fuiste vos quien eliminó esta cuenta, lamentablemente no podemos recuperar los datos. Podés contactarnos respondiendo este email.</p>
           </td>
         </tr>
       </table>
@@ -420,6 +473,66 @@ class AuthController {
           status: 401,
         });
       }
+      if (error instanceof ServerError) {
+        return response.status(error.status).json({
+          message: error.message,
+          ok: false,
+          status: error.status,
+        });
+      }
+      console.error("Error critico:", error);
+      return response.status(500).json({
+        message: "Error interno del servidor",
+        ok: false,
+        status: 500,
+      });
+    }
+  }
+
+  async deleteAccount(request, response) {
+    try {
+      const { password } = request.body;
+      const user_id = request.user.id;
+
+      if (!password) {
+        throw new ServerError("La contraseña es obligatoria", 400);
+      }
+
+      const user = await userRepository.getById(user_id);
+      if (!user) {
+        throw new ServerError("Usuario no encontrado", 404);
+      }
+
+      // Verificamos la contraseña antes de eliminar
+      const is_same_password = await bcrypt.compare(password, user.password);
+      if (!is_same_password) {
+        throw new ServerError("Contraseña incorrecta", 401);
+      }
+
+      // Eliminamos todas las notas del usuario primero
+      await noteRepository.deleteAllByUserId(user_id);
+
+      // Guardamos el nombre y email antes de eliminar el usuario
+      const nombre = user.nombre;
+      const email = user.email;
+
+      // Eliminamos el usuario
+      await userRepository.deleteById(user_id);
+
+      // Enviamos el mail de confirmación
+      await mailer_transport.sendMail({
+        to: email,
+        from: ENVIRONMENT.GMAIL_USERNAME,
+        subject: "Tu cuenta en Folia fue eliminada",
+        html: buildDeleteAccountEmailHtml(nombre, ENVIRONMENT.URL_FRONTEND),
+      });
+
+      return response.status(200).json({
+        ok: true,
+        status: 200,
+        message: "Cuenta eliminada con éxito",
+      });
+    } catch (error) {
       if (error instanceof ServerError) {
         return response.status(error.status).json({
           message: error.message,
