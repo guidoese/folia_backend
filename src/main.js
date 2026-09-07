@@ -16,7 +16,7 @@ if (ENVIRONMENT.MODE === "development") {
 const app = express();
 const port = ENVIRONMENT.PORT;
 
-//Habilitamos las consultas CORS de origen crusado
+// Configure CORS for cross-origin requests
 
 app.use(
   cors({
@@ -50,18 +50,7 @@ app.use("/api/notes", notesRouter);
 
 app.get(
   "/api/profile",
-  /*  (request, response, next) => {
-        const random_num = Math.random() 
-        console.log('Numero aleatorion generado:', random_num)
-        if(random_num > 0.5){
-            return response.json({
-                message:"Mala suerte campeon ☠"
-            })
-        }
-        else{
-            next()
-        }
-    }, */ authMiddleware,
+   authMiddleware,
   (request, response) => {
     console.log("Nombre del cliente:", request.user.nombre);
     return response.json({
@@ -80,20 +69,3 @@ if (ENVIRONMENT.MODE === "development") {
 }
 
 export default app;
-/* 
-
-/api/auth => Trabaja todo lo relacionado a autentificacion 
-/api/workspace => Trabaja todo lo relacionado a workspaces
-    /:workspace_id/members => Todo lo relacionado a membresias
-    /:workspace_id/channels => Todo lo relacionado a canales
-        /:channel_id/messages => Todo lo relacionado a mensajes
-    /:workspace_id/contacts
-
-
-Crear mensaje: 
-    POST /api/workspaces/:workspace_id/channels/:channel_id/messages
-    authMiddleware
-    verifyWorkspaceMiddleware
-    verifyChannelMiddleware
-    messagesController.create()
-*/
