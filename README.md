@@ -1,94 +1,194 @@
-# Folia - Backend API
+Folia Backend 🔐
 
-Esta es la API RESTful de la aplicación **Folia**, construida con **Node.js**, **Express** y **MongoDB** (usando **Mongoose** como ODM). Su función principal es gestionar los usuarios, proveer mecanismos de autenticación y autorización mediante tokens JWT, enviar correos de verificación y restablecimiento de contraseña, y realizar operaciones CRUD sobre las notas del usuario.
+REST API backend for Folia, a full-stack notes management application.
 
----
+The API provides user authentication, email verification, password recovery, account management and CRUD operations for personal notes.
 
-## 🛠️ Tecnologías y Librerías Utilizadas
+🌐 Live Application
 
-* **Express**: Framework web ligero para estructurar el enrutamiento y los controladores de la API.
-* **Mongoose**: ODM para modelar y conectar de manera sencilla la base de datos MongoDB.
-* **bcrypt**: Hashing seguro de contraseñas de usuarios.
-* **jsonwebtoken (JWT)**: Emisión y verificación de tokens de sesión para autenticación stateless.
-* **nodemailer**: Servicio de envío de correos electrónicos (verificación de cuentas y recuperación de contraseñas).
-* **dotenv**: Configuración de variables de entorno seguras.
+Folia — Live Demo
 
----
+🛠️ Technologies
+Node.js
+Express.js
+MongoDB
+Mongoose
+JSON Web Tokens (JWT)
+bcrypt
+Nodemailer
+dotenv
+CORS
+✨ Features
+Authentication
+User registration
+Email account verification
+User login
+JWT-based authentication
+Protected routes
+Password recovery through email
+Password reset
+Account deletion
+Notes
 
-## 📁 Arquitectura del Código
+Authenticated users can:
 
-El backend sigue un patrón modular limpio dentro de la carpeta [src](file:///c:/Users/sistemas/Documents/Curso%20UTN/utn2025-11/backend/Proyecto%20final/Folia/Backend/src):
+Create notes
+Retrieve their own notes
+Update notes
+Delete notes
 
-* **[config](file:///c:/Users/sistemas/Documents/Curso%20UTN/utn2025-11/backend/Proyecto%20final/Folia/Backend/src/config)**: Configuración general y de base de datos (`mongodb.config.js`, `environment.config.js`).
-* **[models](file:///c:/Users/sistemas/Documents/Curso%20UTN/utn2025-11/backend/Proyecto%20final/Folia/Backend/src/models)**: Definición de los esquemas de Mongoose ([User](file:///c:/Users/sistemas/Documents/Curso%20UTN/utn2025-11/backend/Proyecto%20final/Folia/Backend/src/models/user.model.js) y [Note](file:///c:/Users/sistemas/Documents/Curso%20UTN/utn2025-11/backend/Proyecto%20final/Folia/Backend/src/models/note.model.js)).
-* **[routes](file:///c:/Users/sistemas/Documents/Curso%20UTN/utn2025-11/backend/Proyecto%20final/Folia/Backend/src/routes)**: Enrutadores Express que dirigen las peticiones HTTP al controlador adecuado.
-* **[controllers](file:///c:/Users/sistemas/Documents/Curso%20UTN/utn2025-11/backend/Proyecto%20final/Folia/Backend/src/controllers)**: Lógica de negocio que procesa las solicitudes, interactúa con la base de datos y retorna respuestas.
-* **[middlewares](file:///c:/Users/sistemas/Documents/Curso%20UTN/utn2025-11/backend/Proyecto%20final/Folia/Backend/src/middlewares)**: Funciones intermedias como la validación de tokens JWT ([auth.middleware.js](file:///c:/Users/sistemas/Documents/Curso%20UTN/utn2025-11/backend/Proyecto%20final/Folia/Backend/src/middlewares/auth.middleware.js)).
-* **[helpers](file:///c:/Users/sistemas/Documents/Curso%20UTN/utn2025-11/backend/Proyecto%20final/Folia/Backend/src/helpers)**: Utilidades varias (ej. formateadores, transportadores de mail).
+Each note belongs to a specific user, ensuring that users can only access their own notes.
 
----
+Account Management
 
-## 🗄️ Modelos de Base de Datos (Mongoose)
+Users can permanently delete their account.
 
-### 1. Usuario (`User`)
-Almacena la información de registro y estado de verificación del usuario.
-```javascript
-{
-  nombre: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-  fecha_creacion: { type: Date, default: Date.now },
-  activo: { type: Boolean, default: true },
-  email_verificado: { type: Boolean, default: false }
-}
-```
+When an account is deleted, all notes associated with that account are also removed from the database.
 
-### 2. Nota (`Note`)
-Almacena el contenido de las notas y las asocia a un usuario.
-```javascript
-{
-  titulo: { type: String, required: true },
-  contenido: { type: String, default: "" },
-  user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  // timestamps agregados automáticamente (createdAt, updatedAt)
-}
-```
+🏗️ Project Structure
 
----
+The backend follows a modular architecture that separates responsibilities between different layers.
 
-## 🚦 Rutas y Endpoints de la API
+src/
+├── config/
+├── controllers/
+├── helpers/
+├── middlewares/
+├── models/
+├── routes/
+└── main.js
 
-### 🔑 Rutas de Autenticación (`/api/auth`)
-Definidas en [auth.router.js](file:///c:/Users/sistemas/Documents/Curso%20UTN/utn2025-11/backend/Proyecto%20final/Folia/Backend/src/routes/auth.router.js).
+Main responsibilities
+Routes — Define API endpoints and HTTP methods.
+Controllers — Handle requests and application logic.
+Models — Define MongoDB data models using Mongoose.
+Middlewares — Handle authentication and request processing.
+Helpers — Contain reusable application logic.
+Config — Manage database and environment configuration.
+main.js — Configures the Express application, middleware, routes and server.
+🔐 Authentication
 
-| Método | Endpoint | Middleware | Descripción |
-| :--- | :--- | :--- | :--- |
-| `POST` | `/register` | Ninguno | Registra un nuevo usuario en la base de datos (con contraseña encriptada usando `bcrypt`) y envía un correo electrónico de verificación. |
-| `GET` | `/verify-email` | Ninguno | Valida la cuenta mediante el parámetro `verification_token` recibido por query string. |
-| `POST` | `/login` | Ninguno | Autentica las credenciales y devuelve un token JWT firmado si los datos son correctos y el correo está verificado. |
-| `POST` | `/forgot-password` | Ninguno | Envía un email con un link que contiene un `reset_token` para reestablecer la contraseña si se ha olvidado. |
-| `POST` | `/reset-password` | Ninguno | Modifica la contraseña del usuario tras validar el `reset_token` recibido por query string. |
+Folia uses JWT-based authentication to protect private resources.
 
-### 📝 Rutas de Notas (`/api/notes`)
-Definidas en [notes.router.js](file:///c:/Users/sistemas/Documents/Curso%20UTN/utn2025-11/backend/Proyecto%20final/Folia/Backend/src/routes/notes.router.js).
-> ⚠️ **Nota:** Todas estas rutas requieren el uso del `authMiddleware`, por lo que se debe enviar la cabecera `Authorization: Bearer <token_jwt>`.
+Authentication is required for:
 
-| Método | Endpoint | Parámetros / Body | Descripción |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/` | Ninguno | Devuelve todas las notas pertenecientes únicamente al usuario autenticado. |
-| `POST` | `/` | `{ titulo, contenido }` | Crea una nueva nota asociada al usuario autenticado. |
-| `PUT` | `/:id` | `{ titulo, contenido }` | Actualiza la nota correspondiente al `:id` especificado (verifica que la nota pertenezca al usuario autenticado). |
-| `DELETE` | `/:id` | Ninguno | Elimina la nota correspondiente al `:id` especificado (verifica pertenencia del usuario). |
+Notes endpoints
+Account deletion
+Profile endpoint
 
-### 👤 Perfil (`/api/profile`)
-* **`GET /api/profile`**: Endpoint protegido por `authMiddleware` para verificar la validez del token y obtener información básica del perfil del usuario actual.
+The notes router applies the authentication middleware to all of its routes, ensuring that every notes operation is performed by an authenticated user.
 
----
+📡 API Endpoints
+Authentication
+Method	Endpoint	Authentication	Description
+POST	/api/auth/register	No	Register a new user
+GET	/api/auth/verify-email	No	Verify a user's email
+POST	/api/auth/login	No	Authenticate a user
+POST	/api/auth/forgot-password	No	Request password recovery
+POST	/api/auth/reset-password	No	Reset the user's password
+DELETE	/api/auth/delete-account	🔒 Yes	Delete the authenticated user's account
+Notes
 
-## 🛡️ ¿Cómo funciona la Autenticación mediante Middleware?
+All notes endpoints require authentication.
 
-El archivo [auth.middleware.js](file:///c:/Users/sistemas/Documents/Curso%20UTN/utn2025-11/backend/Proyecto%20final/Folia/Backend/src/middlewares/auth.middleware.js) es el encargado de proteger los endpoints sensibles:
-1. Extrae el encabezado `authorization` de la solicitud entrante.
-2. Comprueba que el formato sea `Bearer <JWT_TOKEN>`.
-3. Decodifica el token usando la clave secreta `JWT_SECRET`. Si el token expiró o es inválido, retorna un error `401 Unauthorized`.
-4. Si es válido, inyecta la información del usuario en el objeto `request` (disponible como `request.user` en los controladores siguientes) permitiendo filtrar las notas por el ID del usuario en la base de datos de manera segura.
+Method	Endpoint	Authentication	Description
+GET	/api/notes	🔒 Yes	Retrieve the authenticated user's notes
+POST	/api/notes	🔒 Yes	Create a new note
+PUT	/api/notes/:id	🔒 Yes	Update a note
+DELETE	/api/notes/:id	🔒 Yes	Delete a note
+Profile
+Method	Endpoint	Authentication	Description
+GET	/api/profile	🔒 Yes	Access the authenticated user's profile
+📧 Email Integration
+
+The application uses Nodemailer to handle email-based processes such as:
+
+Account verification
+Password recovery
+
+This allows users to verify their accounts and securely recover their passwords through email.
+
+🗄️ Database
+
+The application uses MongoDB as its database, with Mongoose for data modeling and database interaction.
+
+User accounts and notes are stored as related resources, allowing each authenticated user to access only their own notes.
+
+🌍 CORS
+
+The API is configured with CORS to control which frontend applications can communicate with the backend.
+
+During development, cross-origin requests are allowed for local testing.
+
+In production, the allowed frontend origin is configured through environment variables.
+
+⚙️ Environment Variables
+
+Create a .env file and configure the required environment variables.
+
+Example:
+
+PORT=your_port
+MODE=development
+URL_FRONTEND=http://localhost:5173
+MONGODB_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret
+EMAIL_USER=your_email
+EMAIL_PASSWORD=your_email_password
+
+
+Never commit your .env file or expose your credentials publicly.
+
+🚀 Getting Started
+Prerequisites
+Node.js
+npm
+MongoDB database
+Installation
+
+Clone the repository:
+
+git clone https://github.com/guidoese/folia_backend.git
+
+
+Navigate to the project:
+
+cd folia_backend
+
+
+Install dependencies:
+
+npm install
+
+
+Configure your environment variables in a .env file.
+
+Start the development server:
+
+npm run dev
+
+
+The API will be available at the configured local port.
+
+🔗 Related Projects
+Frontend
+
+Folia — React Frontend
+
+Live Application
+
+Folia
+
+📚 About the Project
+
+Folia Backend was developed as a practical Full Stack Web Development project as part of my training at Universidad Tecnológica Nacional (UTN).
+
+The project allowed me to practice building a REST API with Node.js and Express, implementing JWT authentication, working with MongoDB and Mongoose, protecting routes with middleware, handling user-related data and integrating email-based account verification and password recovery.
+
+👨‍💻 Author
+
+Guido Suarez
+
+Junior Full Stack Web Developer
+
+GitHub
