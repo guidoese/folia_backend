@@ -2,11 +2,11 @@ Folia Backend 🔐
 
 REST API backend for Folia, a full-stack notes management application.
 
-The API provides user authentication, email verification, password recovery, account management and CRUD operations for personal notes.
+The API provides user authentication, email verification, password recovery, account management, and CRUD operations for personal notes.
 
-🌐 Live Application
+🌐 API
 
-Folia — Live Demo
+Folia Backend
 
 🛠️ Technologies
 Node.js
@@ -37,7 +37,7 @@ Retrieve their own notes
 Update notes
 Delete notes
 
-Each note belongs to a specific user, ensuring that users can only access their own notes.
+Each note is associated with a specific user, ensuring that users can only access their own data.
 
 Account Management
 
@@ -57,16 +57,23 @@ src/
 ├── models/
 ├── routes/
 └── main.js
+Main Responsibilities
 
-Main responsibilities
 Routes — Define API endpoints and HTTP methods.
+
 Controllers — Handle requests and application logic.
+
 Models — Define MongoDB data models using Mongoose.
+
 Middlewares — Handle authentication and request processing.
+
 Helpers — Contain reusable application logic.
+
 Config — Manage database and environment configuration.
-main.js — Configures the Express application, middleware, routes and server.
-🔐 Authentication
+
+main.js — Configures the Express application, middleware, routes, and server.
+
+🔐 Authentication & Security
 
 Folia uses JWT-based authentication to protect private resources.
 
@@ -76,11 +83,13 @@ Notes endpoints
 Account deletion
 Profile endpoint
 
-The notes router applies the authentication middleware to all of its routes, ensuring that every notes operation is performed by an authenticated user.
+The notes router applies authentication middleware to all of its routes, ensuring that every notes operation is performed by an authenticated user.
+
+Passwords are securely hashed using bcrypt, and sensitive configuration values are managed through environment variables.
 
 📡 API Endpoints
 Authentication
-Method	Endpoint	Authentication	Description
+Method	Endpoint	Auth	Description
 POST	/api/auth/register	No	Register a new user
 GET	/api/auth/verify-email	No	Verify a user's email
 POST	/api/auth/login	No	Authenticate a user
@@ -91,13 +100,13 @@ Notes
 
 All notes endpoints require authentication.
 
-Method	Endpoint	Authentication	Description
+Method	Endpoint	Auth	Description
 GET	/api/notes	🔒 Yes	Retrieve the authenticated user's notes
 POST	/api/notes	🔒 Yes	Create a new note
 PUT	/api/notes/:id	🔒 Yes	Update a note
 DELETE	/api/notes/:id	🔒 Yes	Delete a note
 Profile
-Method	Endpoint	Authentication	Description
+Method	Endpoint	Auth	Description
 GET	/api/profile	🔒 Yes	Access the authenticated user's profile
 📧 Email Integration
 
@@ -136,37 +145,35 @@ JWT_SECRET=your_jwt_secret
 EMAIL_USER=your_email
 EMAIL_PASSWORD=your_email_password
 
-
 Never commit your .env file or expose your credentials publicly.
 
 🚀 Getting Started
 Prerequisites
+
+Make sure you have installed:
+
 Node.js
 npm
-MongoDB database
+A MongoDB database
 Installation
 
 Clone the repository:
 
 git clone https://github.com/guidoese/folia_backend.git
 
-
 Navigate to the project:
 
 cd folia_backend
 
-
 Install dependencies:
 
 npm install
-
 
 Configure your environment variables in a .env file.
 
 Start the development server:
 
 npm run dev
-
 
 The API will be available at the configured local port.
 
@@ -183,7 +190,7 @@ Folia
 
 Folia Backend was developed as a practical Full Stack Web Development project as part of my training at Universidad Tecnológica Nacional (UTN).
 
-The project allowed me to practice building a REST API with Node.js and Express, implementing JWT authentication, working with MongoDB and Mongoose, protecting routes with middleware, handling user-related data and integrating email-based account verification and password recovery.
+The project allowed me to practice building a REST API with Node.js and Express, implementing JWT authentication, working with MongoDB and Mongoose, protecting routes with middleware, managing user-related data, and integrating email-based account verification and password recovery.
 
 👨‍💻 Author
 
