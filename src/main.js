@@ -26,10 +26,10 @@ app.use(
   }),
 );
 
-//parse json
+// Parse JSON request bodies
 app.use(express.json());
 
-//conect mongo db
+// Connect to MongoDB
 app.use(async (request, response, next) => {
   try {
     await connectMongoDB();
@@ -43,7 +43,7 @@ app.use(async (request, response, next) => {
   }
 });
 
-//rutas
+// API routes
 app.use("/api/auth", authRouter);
 
 app.use("/api/notes", notesRouter);
@@ -61,7 +61,8 @@ app.get(
   },
 );
 
-// Solo escuchamos en local, en Vercel exportamos la app
+// Start the server locally; Vercel imports the app in production
+
 if (ENVIRONMENT.MODE === "development") {
   app.listen(port, () => {
     console.log(`Server is running on port http://localhost:${port}`);
